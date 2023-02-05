@@ -1,9 +1,10 @@
 package com.example.restaurantsapp
 
-import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.*
 import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -12,7 +13,9 @@ class RestaurantsViewModel(private val stateHandle: SavedStateHandle) : ViewMode
 
     private var restInterface: RestaurantsApiService
     val state = mutableStateOf(emptyList<Restaurant>())
-    private lateinit var restaurantsCall: Call<List<Restaurant>>
+    private val errorHandler = CoroutineExceptionHandler { _, exception ->
+        exception.printStackTrace()
+    }
 
     init {
         val retrofit: Retrofit = Retrofit.Builder()
@@ -30,24 +33,16 @@ class RestaurantsViewModel(private val stateHandle: SavedStateHandle) : ViewMode
 
 
     private fun getRestaurants() {
-        restaurantsCall = restInterface.getRestaurants()
+        viewModelScope.launch(errorHandler) {
+            val restaurants = getRemoteRestaurants()
+            state.value = restaurants.restoreSelections()
+        }
+    }
 
-        restaurantsCall.enqueue(
-            object : Callback<List<Restaurant>> {
-                override fun onResponse(
-                    call: Call<List<Restaurant>>,
-                    response: Response<List<Restaurant>>
-                ) {
-                    response.body()
-                        ?.let { restaurants -> state.value = restaurants.restoreSelections() }
-                }
-
-                override fun onFailure(call: Call<List<Restaurant>>, t: Throwable) {
-                    t.printStackTrace()
-                }
-
-            }
-        )
+    private suspend fun getRemoteRestaurants(): List<Restaurant> {
+        return withContext(Dispatchers.IO) {
+            restInterface.getRestaurants()
+        }
     }
 
 
@@ -69,8 +64,7 @@ class RestaurantsViewModel(private val stateHandle: SavedStateHandle) : ViewMode
 
     private fun List<Restaurant>.restoreSelections(): List<Restaurant> {
         //TODO: Fix restoring favorites items. Favorites Do not restore after system sending process death
-        var st = stateHandle.get<List<Int>>(FAVORITES)
-        Log.d("Started restoring", "Doing now: $st")
+
         stateHandle.get<List<Int>>(FAVORITES)?.let { selectedIds ->
             val restaurantsMap = this.associateBy { it.id }
             selectedIds.forEach { id ->
@@ -81,10 +75,6 @@ class RestaurantsViewModel(private val stateHandle: SavedStateHandle) : ViewMode
         return this
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        restaurantsCall.cancel()
-    }
 
     companion object {
         const val FAVORITES = "favorites"
