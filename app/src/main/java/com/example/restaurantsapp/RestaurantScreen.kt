@@ -1,62 +1,69 @@
 package com.example.restaurantsapp
 
-import android.media.Image
-import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.runtime.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.restaurantsapp.ui.theme.RestaurantsAppTheme
 
 @Composable
-fun RestaurantsScreen() {
+fun RestaurantsScreen(onItemClick: (id: Int) -> Unit) {
     val viewModel: RestaurantsViewModel = viewModel()
 
 
     LazyColumn(contentPadding = PaddingValues(vertical = 8.dp, horizontal = 8.dp)) {
         items(viewModel.state.value) { restaurant ->
-            RestaurantItem(restaurant) { id ->
-                viewModel.toggleFavorite(id)
-            }
+            RestaurantItem(
+                restaurant,
+                onFavoriteClick = { id -> viewModel.toggleFavorite(id) },
+                onItemClick = { id -> onItemClick(id) })
         }
     }
 }
 
+
 @Composable
-fun RestaurantItem(item: Restaurant, onClick: (id: Int) -> Unit) {
+fun RestaurantItem(
+    item: Restaurant,
+    onFavoriteClick: (id: Int) -> Unit,
+    onItemClick: (id: Int) -> Unit
+) {
 
     val icon = if (item.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
 
     Card(elevation = 4.dp, modifier = Modifier.padding(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(8.dp)
+                .clickable { onItemClick(item.id) }
+        ) {
             RestaurantIcon(Icons.Filled.Place, Modifier.weight(0.15f))
             RestaurantDetails(item.title, item.description, Modifier.weight(0.7f))
-            RestaurantIcon(icon, Modifier.weight(0.15f)) { onClick(item.id) }
+            RestaurantIcon(icon, Modifier.weight(0.15f)) { onFavoriteClick(item.id) }
         }
     }
 }
 
 @Composable
-private fun RestaurantIcon(icon: ImageVector, modifier: Modifier, onClick: () -> Unit = {}) {
+fun RestaurantIcon(icon: ImageVector, modifier: Modifier, onClick: () -> Unit = {}) {
     Image(
         imageVector = icon,
         contentDescription = "Restaurant icon",
@@ -67,9 +74,14 @@ private fun RestaurantIcon(icon: ImageVector, modifier: Modifier, onClick: () ->
 }
 
 @Composable
-private fun RestaurantDetails(title: String, description: String, modifier: Modifier) {
+fun RestaurantDetails(
+    title: String,
+    description: String,
+    modifier: Modifier,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start
+) {
 
-    Column(modifier = modifier) {
+    Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
         Text(text = title, style = MaterialTheme.typography.h6)
         CompositionLocalProvider(
             LocalContentAlpha provides
@@ -88,6 +100,6 @@ private fun RestaurantDetails(title: String, description: String, modifier: Modi
 @Composable
 fun ScreenPreview() {
     RestaurantsAppTheme {
-        RestaurantsScreen()
+        RestaurantsScreen {}
     }
 }
