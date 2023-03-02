@@ -1,4 +1,6 @@
-package com.example.restaurantsapp
+package com.example.restaurantsapp.restaurants.presentation.list
+
+import com.example.restaurantsapp.restaurants.domain.Restaurant
 
 data class RestaurantsScreenState(
     val restaurants: List<Restaurant>,

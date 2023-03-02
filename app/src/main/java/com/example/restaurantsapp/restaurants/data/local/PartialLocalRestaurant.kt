@@ -1,15 +1,13 @@
-package com.example.restaurantsapp
+package com.example.restaurantsapp.restaurants.data.local
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.PrimaryKey
-import com.google.gson.annotations.SerializedName
 
 @Entity
-class PartialRestaurant(
+class PartialLocalRestaurant(
     @ColumnInfo(name = "r_id")
     val id: Int,
-    
+
     @ColumnInfo(name = "is_favorite")
     val isFavorite: Boolean
 )
